@@ -77,6 +77,36 @@ void PrintOptionValues();
 void MarkOptionsChanged();
 
 //===----------------------------------------------------------------------===//
+// Option groups
+//
+struct OptGroup
+{
+  virtual const char* description()=0;
+  virtual const char* name()=0;
+};
+
+/// OPT_GRP(TYPE,NAME,DES) - A macro for creating an option group
+///
+///
+#define OPT_GRP(TYPE,NAME,DES) class TYPE : public llvm::cl::OptGroup { \
+  public: \
+    virtual const char* description() { return #DES; } \
+    virtual const char* name() { return #NAME; } \
+    static TYPE* getInstance() \
+    { \
+      static TYPE* instance=0; \
+      if(instance==0) \
+        instance= new TYPE(); \
+      \
+      return instance; \
+    } \
+};
+
+//Declare default option group
+OPT_GRP(GeneralOption,General options, )
+
+
+//===----------------------------------------------------------------------===//
 // Flags permitted to be passed to command line arguments
 //
 
@@ -173,10 +203,12 @@ class Option {
   unsigned Position;      // Position of last occurrence of the option
   unsigned AdditionalVals;// Greater than 0 for multi-valued option.
   Option *NextRegistered; // Singly linked list of registered options.
+
 public:
   const char *ArgStr;     // The argument string itself (ex: "help", "o")
   const char *HelpStr;    // The descriptive text message for -help
   const char *ValueStr;   // String describing what the value of this option is
+  OptGroup* group; //A pointer to the option group that this option belongs to
 
   inline enum NumOccurrencesFlag getNumOccurrencesFlag() const {
     return (enum NumOccurrencesFlag)Occurrences;
@@ -210,6 +242,7 @@ public:
     Occurrences = Val;
   }
   void setValueExpectedFlag(enum ValueExpected Val) { Value = Val; }
+  void setOptionGroup(OptGroup* og) { group = og; }
   void setHiddenFlag(enum OptionHidden Val) { HiddenFlag = Val; }
   void setFormattingFlag(enum FormattingFlags V) { Formatting = V; }
   void setMiscFlag(enum MiscFlags M) { Misc |= M; }
@@ -220,7 +253,7 @@ protected:
     : NumOccurrences(0), Occurrences(OccurrencesFlag), Value(0),
       HiddenFlag(Hidden), Formatting(NormalFormatting), Misc(0),
       Position(0), AdditionalVals(0), NextRegistered(0),
-      ArgStr(""), HelpStr(""), ValueStr("") {
+      ArgStr(""), HelpStr(""), ValueStr(""), group(GeneralOption::getInstance()) {
   }
 
   inline void setNumAdditionalVals(unsigned n) { AdditionalVals = n; }
@@ -294,6 +327,17 @@ template<class Ty>
 initializer<Ty> init(const Ty &Val) {
   return initializer<Ty>(Val);
 }
+
+// grp - Specific the Option group for the command line argument to
+// belong to
+template<class Ty>
+struct grp {
+  Ty* group;
+  grp() { Ty::getInstance();}
+
+  template<class Opt>
+  void apply(Opt &O) const { O.setOptionGroup(group); }
+};
 
 
 // location - Allow the user to specify which external variable they want to
