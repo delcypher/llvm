@@ -236,6 +236,19 @@ public:
   //
   void addGroup();
 
+  // Check to see if the option is a member of a
+  // particular option group
+  template<class OptType>
+  bool isInGroup() {
+    return group == OptType::getInstance();
+  }
+
+  // Check to see if the option is a member of a
+  // particular option group
+  bool isInGroup(OptGroup* o) {
+    return group == o;
+  }
+
   //-------------------------------------------------------------------------===
   // Accessor functions set by OptionModifiers
   //
