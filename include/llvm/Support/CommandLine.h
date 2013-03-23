@@ -232,6 +232,10 @@ public:
   // hasArgStr - Return true if the argstr != ""
   bool hasArgStr() const { return ArgStr[0] != 0; }
 
+  // addGroup - Register the option group that this option belongs to
+  //
+  void addGroup();
+
   //-------------------------------------------------------------------------===
   // Accessor functions set by OptionModifiers
   //
@@ -242,7 +246,7 @@ public:
     Occurrences = Val;
   }
   void setValueExpectedFlag(enum ValueExpected Val) { Value = Val; }
-  void setOptionGroup(OptGroup* og) { group = og; }
+  void setOptionGroup(OptGroup* og) { group = og; addGroup();}
   void setHiddenFlag(enum OptionHidden Val) { HiddenFlag = Val; }
   void setFormattingFlag(enum FormattingFlags V) { Formatting = V; }
   void setMiscFlag(enum MiscFlags M) { Misc |= M; }
@@ -261,6 +265,8 @@ public:
   // addArgument - Register this argument with the commandline system.
   //
   void addArgument();
+
+
 
   Option *getNextRegisteredOption() const { return NextRegistered; }
 

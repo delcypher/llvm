@@ -98,12 +98,19 @@ void cl::MarkOptionsChanged() {
 /// have statically constructed themselves.
 static Option *RegisteredOptionList = 0;
 
+// This collects the different option groups
+static ManagedStatic<SmallPtrSet<OptGroup*,16> > registeredOptionGroups;
+
 void Option::addArgument() {
   assert(NextRegistered == 0 && "argument multiply registered!");
 
   NextRegistered = RegisteredOptionList;
   RegisteredOptionList = this;
   MarkOptionsChanged();
+}
+
+void Option::addGroup() {
+  registeredOptionGroups->insert(this->group);
 }
 
 
