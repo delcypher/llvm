@@ -1310,22 +1310,22 @@ public:
 
   virtual void printOptions(SmallVector<std::pair<const char *, Option*>, 128>& Opts, size_t MaxArgLen)
   {
-    std::vector<OptionCategory*> sortedGroups;
-    std::map<OptionCategory*,std::vector<Option*> > groupedOptions;
+    std::vector<OptionCategory*> sortedCategories;
+    std::map<OptionCategory*,std::vector<Option*> > categorizedOptions;
 
     //Find the different option groups and sort them alphabetically
     for(SmallPtrSet<OptionCategory*,16>::const_iterator i= registeredOptionGroups->begin();
           i!= registeredOptionGroups->end(); ++i)
     {
-      sortedGroups.push_back(*i);
+      sortedCategories.push_back(*i);
     }
-    std::sort(sortedGroups.begin(),sortedGroups.end(),OptionCategoryCompare);
+    std::sort(sortedCategories.begin(),sortedCategories.end(),OptionCategoryCompare);
 
     //Create map to empty vectors
-    for(std::vector<OptionCategory*>::const_iterator i = sortedGroups.begin();
-          i != sortedGroups.end() ; ++i)
+    for(std::vector<OptionCategory*>::const_iterator i = sortedCategories.begin();
+          i != sortedCategories.end() ; ++i)
     {
-      groupedOptions[*i] = std::vector<Option*>();
+      categorizedOptions[*i] = std::vector<Option*>();
 
     }
 
@@ -1333,12 +1333,12 @@ public:
     for (size_t i = 0, e = Opts.size(); i != e; ++i)
     {
       Option* o = Opts[i].second;
-      groupedOptions[o->category].push_back(o);
+      categorizedOptions[o->category].push_back(o);
     }
 
     //Now do printing
-    for(std::vector<OptionCategory*>::const_iterator i = sortedGroups.begin();
-         i != sortedGroups.end(); ++i)
+    for(std::vector<OptionCategory*>::const_iterator i = sortedCategories.begin();
+         i != sortedCategories.end(); ++i)
     {
       outs() << "\n";
       outs() <<  (*i)->name()  << ":\n";
@@ -1350,7 +1350,7 @@ public:
         outs() << "\n";
 
       //Loop over the options in the group
-      for(std::vector<Option*>::const_iterator o = groupedOptions[*i].begin(); o != groupedOptions[*i].end(); ++o)
+      for(std::vector<Option*>::const_iterator o = categorizedOptions[*i].begin(); o != categorizedOptions[*i].end(); ++o)
       {
          (*o)->printOptionInfo(MaxArgLen);
       }
