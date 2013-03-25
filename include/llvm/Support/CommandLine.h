@@ -1743,10 +1743,16 @@ struct extrahelp {
 };
 
 void PrintVersionMessage();
-// This function just prints the help message, exactly the same way as if the
-// -help option had been given on the command line.
-// NOTE: THIS FUNCTION TERMINATES THE PROGRAM!
-void PrintHelpMessage();
+
+/// This function just prints the help message, exactly the same way as if the
+/// -help, -help-hidden, -help-cat or -help-cat-hidden option had been given
+/// on the command line.
+///
+/// NOTE: THIS FUNCTION TERMINATES THE PROGRAM!
+///
+/// \param hidden if true will print hidden options
+/// \param categorized if true print options in categories
+void PrintHelpMessage(bool hidden=false, bool categorized=false);
 
 } // End namespace cl
 

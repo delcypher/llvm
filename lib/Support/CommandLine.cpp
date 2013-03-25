@@ -1308,6 +1308,9 @@ public:
 	  return strcmp(a->name(),b->name()) < 0 ;
   }
 
+  //Make sure we inherit our base class's operator=()
+  using HelpPrinter::operator=;
+
   virtual void printOptions(SmallVector<std::pair<const char *, Option*>, 128>& Opts, size_t MaxArgLen)
   {
     std::vector<OptionCategory*> sortedCategories;
@@ -1486,14 +1489,25 @@ VersOp("version", cl::desc("Display the version of this program"),
     cl::location(VersionPrinterInstance), cl::ValueDisallowed);
 
 // Utility function for printing the help message.
-void cl::PrintHelpMessage() {
+void cl::PrintHelpMessage(bool hidden, bool categorized) {
   // This looks weird, but it actually prints the help message. The
-  // NormalPrinter variable is a HelpPrinter and the help gets printed when
-  // its operator= is invoked. That's because the "normal" usages of the
-  // help printer is to be assigned true/false depending on whether the
-  // -help option was given or not. Since we're circumventing that we have
-  // to make it look like -help was given, so we assign true.
-  NormalPrinter = true;
+  // NormalPrinter and other variables are types of HelpPrinter and the
+  // help gets printed when its operator= is invoked. That's because the "normal"
+  // usages of the help printer is to be assigned true/false depending on whether
+  // the -help or [1] were given or not.
+  // Since we're circumventing that we have to make it look like -help or [1]
+  // were given, so we assign true.
+  //
+  // [1] : -help-hidden, -help-cat, -help-cat-hidden
+
+  if(!hidden && !categorized)
+    NormalPrinter = true;
+  else if(!hidden && categorized)
+    CategorizedNormalPrinter = true;
+  else if(hidden && !categorized)
+	  HiddenPrinter = true;
+  else
+	  CategorizedHiddenPrinter = true;
 }
 
 /// Utility function for printing version number.
