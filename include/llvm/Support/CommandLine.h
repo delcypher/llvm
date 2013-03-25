@@ -77,6 +77,44 @@ void PrintOptionValues();
 void MarkOptionsChanged();
 
 //===----------------------------------------------------------------------===//
+// Option groups
+//
+struct OptionCategory
+{
+  virtual const char* description()=0;
+  virtual const char* name()=0;
+};
+
+/// \def OPT_CAT(TYPE,NAME,DES)
+/// A macro for creating an option category.
+///
+/// \param TYPE is the type name of the option category to create
+/// \param NAME is a string that will be used as the name of the category
+/// \param DES  is an optional string that will be used as the description
+///             of the category
+///
+///  This declares a subclass of llvm::cl::OptionCategory of type \p TYPE .
+///  The class is declared in the current namespace.
+#define OPT_CAT(TYPE,NAME,DES) struct TYPE : public llvm::cl::OptionCategory {\
+    virtual const char* description() { return #DES; } \
+    virtual const char* name() { return #NAME; } \
+    static TYPE* getInstance() \
+    { \
+      static TYPE* instance=0; \
+      if(instance==0) \
+        instance= new TYPE(); \
+      \
+      assert(strlen(instance->name()) > 0 && \
+             "Option Category " #TYPE " must have name" ); \
+      return instance; \
+    } \
+};
+
+//Declare default option category
+OPT_CAT(GeneralOption,General options, )
+
+
+//===----------------------------------------------------------------------===//
 // Flags permitted to be passed to command line arguments
 //
 
@@ -157,6 +195,10 @@ class Option {
     return ValueOptional;
   }
 
+  // addCategory - Register the option category that this option belongs to
+  //
+  void addCategory();
+
   // Out of line virtual function to provide home for the class.
   virtual void anchor();
 
@@ -173,10 +215,12 @@ class Option {
   unsigned Position;      // Position of last occurrence of the option
   unsigned AdditionalVals;// Greater than 0 for multi-valued option.
   Option *NextRegistered; // Singly linked list of registered options.
+
 public:
   const char *ArgStr;     // The argument string itself (ex: "help", "o")
   const char *HelpStr;    // The descriptive text message for -help
   const char *ValueStr;   // String describing what the value of this option is
+  OptionCategory* category; //The option category that this option belongs to
 
   inline enum NumOccurrencesFlag getNumOccurrencesFlag() const {
     return (enum NumOccurrencesFlag)Occurrences;
@@ -200,6 +244,19 @@ public:
   // hasArgStr - Return true if the argstr != ""
   bool hasArgStr() const { return ArgStr[0] != 0; }
 
+  // Check to see if the option is a member of a
+  // particular option group
+  template<class OptType>
+  bool isInGroup() {
+    return category == OptType::getInstance();
+  }
+
+  // Check to see if the option is a member of a
+  // particular option group
+  bool isInGroup(OptionCategory* o) {
+    return category == o;
+  }
+
   //-------------------------------------------------------------------------===
   // Accessor functions set by OptionModifiers
   //
@@ -210,6 +267,7 @@ public:
     Occurrences = Val;
   }
   void setValueExpectedFlag(enum ValueExpected Val) { Value = Val; }
+  void setOptionCategory(OptionCategory* og) { category = og; addCategory();}
   void setHiddenFlag(enum OptionHidden Val) { HiddenFlag = Val; }
   void setFormattingFlag(enum FormattingFlags V) { Formatting = V; }
   void setMiscFlag(enum MiscFlags M) { Misc |= M; }
@@ -220,7 +278,7 @@ protected:
     : NumOccurrences(0), Occurrences(OccurrencesFlag), Value(0),
       HiddenFlag(Hidden), Formatting(NormalFormatting), Misc(0),
       Position(0), AdditionalVals(0), NextRegistered(0),
-      ArgStr(""), HelpStr(""), ValueStr("") {
+      ArgStr(""), HelpStr(""), ValueStr(""), category(GeneralOption::getInstance()) {
   }
 
   inline void setNumAdditionalVals(unsigned n) { AdditionalVals = n; }
@@ -294,6 +352,17 @@ template<class Ty>
 initializer<Ty> init(const Ty &Val) {
   return initializer<Ty>(Val);
 }
+
+// cat - Specifiy the Option category for the command line argument to belong
+// to
+template<class Ty>
+struct cat {
+  Ty* category;
+  cat() { category=Ty::getInstance();}
+
+  template<class Opt>
+  void apply(Opt &O) const { O.setOptionCategory(category); }
+};
 
 
 // location - Allow the user to specify which external variable they want to

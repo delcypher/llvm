@@ -31,6 +31,7 @@
 #include "llvm/Support/Path.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/system_error.h"
+#include <map>
 #include <cerrno>
 #include <cstdlib>
 using namespace llvm;
@@ -98,12 +99,19 @@ void cl::MarkOptionsChanged() {
 /// have statically constructed themselves.
 static Option *RegisteredOptionList = 0;
 
+// This collects the different option groups
+static ManagedStatic<SmallPtrSet<OptionCategory*,16> > registeredOptionGroups;
+
 void Option::addArgument() {
   assert(NextRegistered == 0 && "argument multiply registered!");
 
   NextRegistered = RegisteredOptionList;
   RegisteredOptionList = this;
   MarkOptionsChanged();
+}
+
+void Option::addCategory() {
+  registeredOptionGroups->insert(this->category);
 }
 
 
@@ -1224,6 +1232,12 @@ namespace {
 class HelpPrinter {
   const bool ShowHidden;
 
+  virtual void printOptions(SmallVector<std::pair<const char *, Option*>, 128>& Opts, size_t MaxArgLen)
+  {
+    for (size_t i = 0, e = Opts.size(); i != e; ++i)
+      Opts[i].second->printOptionInfo(MaxArgLen);
+  }
+
 public:
   explicit HelpPrinter(bool showHidden) : ShowHidden(showHidden) {}
 
@@ -1267,8 +1281,7 @@ public:
       MaxArgLen = std::max(MaxArgLen, Opts[i].second->getOptionWidth());
 
     outs() << "OPTIONS:\n";
-    for (size_t i = 0, e = Opts.size(); i != e; ++i)
-      Opts[i].second->printOptionInfo(MaxArgLen);
+    printOptions(Opts,MaxArgLen);
 
     // Print any extra help the user has declared.
     for (std::vector<const char *>::iterator I = MoreHelp->begin(),
@@ -1280,6 +1293,72 @@ public:
     exit(1);
   }
 };
+
+
+
+
+class CategorizedHelpPrinter : public HelpPrinter
+{
+public:
+  explicit CategorizedHelpPrinter(bool showHidden) : HelpPrinter(showHidden) {}
+
+  //Helper function for printOptions()
+  //It shall return true if "a" should be ordered before "b", false otherwise
+  static bool OptionCategoryCompare(OptionCategory* a,OptionCategory* b) {
+	  return strcmp(a->name(),b->name()) < 0 ;
+  }
+
+  virtual void printOptions(SmallVector<std::pair<const char *, Option*>, 128>& Opts, size_t MaxArgLen)
+  {
+    std::vector<OptionCategory*> sortedCategories;
+    std::map<OptionCategory*,std::vector<Option*> > categorizedOptions;
+
+    //Find the different option groups and sort them alphabetically
+    for(SmallPtrSet<OptionCategory*,16>::const_iterator i= registeredOptionGroups->begin();
+          i!= registeredOptionGroups->end(); ++i)
+    {
+      sortedCategories.push_back(*i);
+    }
+    std::sort(sortedCategories.begin(),sortedCategories.end(),OptionCategoryCompare);
+
+    //Create map to empty vectors
+    for(std::vector<OptionCategory*>::const_iterator i = sortedCategories.begin();
+          i != sortedCategories.end() ; ++i)
+    {
+      categorizedOptions[*i] = std::vector<Option*>();
+
+    }
+
+    //Walk through pre-sorted options and assign into groups
+    for (size_t i = 0, e = Opts.size(); i != e; ++i)
+    {
+      Option* o = Opts[i].second;
+      categorizedOptions[o->category].push_back(o);
+    }
+
+    //Now do printing
+    for(std::vector<OptionCategory*>::const_iterator i = sortedCategories.begin();
+         i != sortedCategories.end(); ++i)
+    {
+      outs() << "\n";
+      outs() <<  (*i)->name()  << ":\n";
+
+      //check if description is blank
+      if((*i)->description()[0])
+        outs() <<  (*i)->description()  << "\n\n";
+      else
+        outs() << "\n";
+
+      //Loop over the options in the group
+      for(std::vector<Option*>::const_iterator o = categorizedOptions[*i].begin(); o != categorizedOptions[*i].end(); ++o)
+      {
+         (*o)->printOptionInfo(MaxArgLen);
+      }
+    }
+
+  }
+};
+
 } // End anonymous namespace
 
 // Define the two HelpPrinter instances that are used to print out help, or
@@ -1288,6 +1367,12 @@ public:
 static HelpPrinter NormalPrinter(false);
 static HelpPrinter HiddenPrinter(true);
 
+// Define the two CategorizedHelpPrinter instances that are used to
+// print out help-cat or help-cat-hidden with the
+// options displayed in categories
+static CategorizedHelpPrinter CategorizedNormalPrinter(false);
+static CategorizedHelpPrinter CategorizedHiddenPrinter(true);
+
 static cl::opt<HelpPrinter, true, parser<bool> >
 HOp("help", cl::desc("Display available options (-help-hidden for more)"),
     cl::location(NormalPrinter), cl::ValueDisallowed);
@@ -1295,6 +1380,14 @@ HOp("help", cl::desc("Display available options (-help-hidden for more)"),
 static cl::opt<HelpPrinter, true, parser<bool> >
 HHOp("help-hidden", cl::desc("Display all available options"),
      cl::location(HiddenPrinter), cl::Hidden, cl::ValueDisallowed);
+
+static cl::opt<HelpPrinter, true, parser<bool> >
+HCOp("help-cat", cl::desc("Display available options in categories (-help-cat-hidden for more)"),
+    cl::location(CategorizedNormalPrinter), cl::ValueDisallowed);
+
+static cl::opt<HelpPrinter, true, parser<bool> >
+HHCOp("help-cat-hidden", cl::desc("Display all available options in categories"),
+    cl::location(CategorizedHiddenPrinter), cl::Hidden, cl::ValueDisallowed);
 
 static cl::opt<bool>
 PrintOptions("print-options",
