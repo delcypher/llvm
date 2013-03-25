@@ -22,6 +22,7 @@
 
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/Twine.h"
+#include "llvm/ADT/StringMap.h"
 #include "llvm/Support/Compiler.h"
 #include "llvm/Support/type_traits.h"
 #include <cassert>
@@ -272,6 +273,10 @@ public:
   void setFormattingFlag(enum FormattingFlags V) { Formatting = V; }
   void setMiscFlag(enum MiscFlags M) { Misc |= M; }
   void setPosition(unsigned pos) { Position = pos; }
+
+  //Convenience method for clients
+  template<class Opt>
+  void setOptionCategory() { category = Opt::getInstance(); }
 protected:
   explicit Option(enum NumOccurrencesFlag OccurrencesFlag,
                   enum OptionHidden Hidden)
@@ -313,6 +318,36 @@ public:
   inline int getNumOccurrences() const { return NumOccurrences; }
   virtual ~Option() {}
 };
+
+//===----------------------------------------------------------------------===//
+// Public interface for accessing registered options.
+//
+
+/// \brief Use this to get a StringMap to all registered named options
+/// (e.g. -help). Note \p map Should be an empty StringMap.
+///
+/// \param [in,out] map will be filled with mappings where the key is the Option
+/// argument string (e.g. "help") and value is the corresponding Option*.
+///
+/// Access to unnamed arguments (i.e. positional) are not provided because
+/// it is expected that the client already have access to these
+///
+/// Typical usage:
+/// \code
+/// main(int argc,char* argv[]) {
+/// StringMap<llvm::cl::Option*> opts;
+/// llvm::cl::getRegisteredOptions(opts);
+/// assert(opts.count("help") == 1)
+/// opts["help"]->setDescription("Show alphabetical help information")
+/// // More code
+/// llvm::cl::ParseCommandLineOptions(argc,argv);
+/// //More code
+/// }
+/// \endcode
+///
+/// This interface is useful for modifying options in libraries that
+/// are out of the control of the client.
+void getRegisteredOptions(StringMap<Option*> & map);
 
 
 //===----------------------------------------------------------------------===//

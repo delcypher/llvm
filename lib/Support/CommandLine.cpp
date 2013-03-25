@@ -1227,6 +1227,16 @@ sortOpts(StringMap<Option*> &OptMap,
   qsort(Opts.data(), Opts.size(), sizeof(Opts[0]), OptNameCompare);
 }
 
+//Provide a public interface for accessing registered options.
+void cl::getRegisteredOptions(StringMap<Option*> & map)
+{
+	    // Get all the options.
+	    SmallVector<Option*, 4> PositionalOpts; //NOT USED
+	    SmallVector<Option*, 4> SinkOpts;  //NOT USED
+	    GetOptionInfo(PositionalOpts, SinkOpts, map);
+	    return;
+}
+
 namespace {
 
 class HelpPrinter {
