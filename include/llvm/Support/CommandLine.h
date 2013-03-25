@@ -310,12 +310,28 @@ public:
 // Public interface for accessing registered options.
 //
 
-///  Use this to get a StringMap to all registered named options (e.g. -help).
-///  \param map Should be an empty StringMap.
+/// \brief Use this to get a StringMap to all registered named options
+///  (e.g. -help). Note \p map Should be an empty StringMap.
 ///
-///  The passed in StringMap will be filled with mappings where the
-///  key is the Option ArgStr (e.g. "help") and value is to the corresponding
-///  Option*
+/// \p will be filled with mappings where the
+/// key is the Option ArgStr (e.g. "help") and value is to the corresponding
+/// Option*
+///
+/// Typical usage:
+/// \code
+/// main(int arc,char* argv[]) {
+/// StringMap<llvm::cl::Option*> opts;
+/// llvm::cl::getRegisteredOptions(opts);
+/// assert(opts.count("help") == 1)
+/// opts["help"]->setDescription("Show alphabetical help information")
+/// // More code
+/// llvm::cl::ParseCommandLineOptions(arc,argv);
+/// //More code
+/// }
+/// \endcode
+///
+/// This interface is useful for modifying options in libraries that
+/// are out of the control client.
 void getRegisteredOptions(StringMap<Option*> & map);
 
 
@@ -357,7 +373,7 @@ initializer<Ty> init(const Ty &Val) {
   return initializer<Ty>(Val);
 }
 
-// grp - Specific the Option group for the command line argument to
+// cat - Specific the Option category for the command line argument to
 // belong to
 template<class Ty>
 struct cat {
