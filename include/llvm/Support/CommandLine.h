@@ -351,7 +351,7 @@ initializer<Ty> init(const Ty &Val) {
 template<class Ty>
 struct grp {
   Ty* group;
-  grp() { Ty::getInstance();}
+  grp() { group=Ty::getInstance();}
 
   template<class Opt>
   void apply(Opt &O) const { O.setOptionGroup(group); }
