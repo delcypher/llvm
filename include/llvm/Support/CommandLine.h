@@ -311,27 +311,29 @@ public:
 //
 
 /// \brief Use this to get a StringMap to all registered named options
-///  (e.g. -help). Note \p map Should be an empty StringMap.
+/// (e.g. -help). Note \p map Should be an empty StringMap.
 ///
-/// \p will be filled with mappings where the
-/// key is the Option ArgStr (e.g. "help") and value is to the corresponding
-/// Option*
+/// \param [in,out] map will be filled with mappings where the key is the Option
+/// argument string (e.g. "help") and value is the corresponding Option*.
+///
+/// Access to unnamed arguments (i.e. positional) are not provided because
+/// it is expected that the client already have access to these
 ///
 /// Typical usage:
 /// \code
-/// main(int arc,char* argv[]) {
+/// main(int argc,char* argv[]) {
 /// StringMap<llvm::cl::Option*> opts;
 /// llvm::cl::getRegisteredOptions(opts);
 /// assert(opts.count("help") == 1)
 /// opts["help"]->setDescription("Show alphabetical help information")
 /// // More code
-/// llvm::cl::ParseCommandLineOptions(arc,argv);
+/// llvm::cl::ParseCommandLineOptions(argc,argv);
 /// //More code
 /// }
 /// \endcode
 ///
 /// This interface is useful for modifying options in libraries that
-/// are out of the control client.
+/// are out of the control of the client.
 void getRegisteredOptions(StringMap<Option*> & map);
 
 
