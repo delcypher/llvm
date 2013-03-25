@@ -79,7 +79,7 @@ void MarkOptionsChanged();
 //===----------------------------------------------------------------------===//
 // Option groups
 //
-struct OptGroup
+struct OptionCategory
 {
   virtual const char* description()=0;
   virtual const char* name()=0;
@@ -88,7 +88,7 @@ struct OptGroup
 /// OPT_GRP(TYPE,NAME,DES) - A macro for creating an option group
 ///
 ///
-#define OPT_GRP(TYPE,NAME,DES) struct TYPE : public llvm::cl::OptGroup { \
+#define OPT_CAT(TYPE,NAME,DES) struct TYPE : public llvm::cl::OptionCategory { \
     virtual const char* description() { return #DES; } \
     virtual const char* name() { return #NAME; } \
     static TYPE* getInstance() \
@@ -101,8 +101,8 @@ struct OptGroup
     } \
 };
 
-//Declare default option group
-OPT_GRP(GeneralOption,General options, )
+//Declare default option category
+OPT_CAT(GeneralOption,General options, )
 
 
 //===----------------------------------------------------------------------===//
@@ -186,9 +186,9 @@ class Option {
     return ValueOptional;
   }
 
-  // addGroup - Register the option group that this option belongs to
+  // addCategory - Register the option category that this option belongs to
   //
-  void addGroup();
+  void addCategory();
 
   // Out of line virtual function to provide home for the class.
   virtual void anchor();
@@ -211,7 +211,7 @@ public:
   const char *ArgStr;     // The argument string itself (ex: "help", "o")
   const char *HelpStr;    // The descriptive text message for -help
   const char *ValueStr;   // String describing what the value of this option is
-  OptGroup* group; //A pointer to the option group that this option belongs to
+  OptionCategory* category; //A pointer to the option group that this option belongs to
 
   inline enum NumOccurrencesFlag getNumOccurrencesFlag() const {
     return (enum NumOccurrencesFlag)Occurrences;
@@ -239,13 +239,13 @@ public:
   // particular option group
   template<class OptType>
   bool isInGroup() {
-    return group == OptType::getInstance();
+    return category == OptType::getInstance();
   }
 
   // Check to see if the option is a member of a
   // particular option group
-  bool isInGroup(OptGroup* o) {
-    return group == o;
+  bool isInGroup(OptionCategory* o) {
+    return category == o;
   }
 
   //-------------------------------------------------------------------------===
@@ -258,7 +258,7 @@ public:
     Occurrences = Val;
   }
   void setValueExpectedFlag(enum ValueExpected Val) { Value = Val; }
-  void setOptionGroup(OptGroup* og) { group = og; addGroup();}
+  void setOptionCategory(OptionCategory* og) { category = og; addCategory();}
   void setHiddenFlag(enum OptionHidden Val) { HiddenFlag = Val; }
   void setFormattingFlag(enum FormattingFlags V) { Formatting = V; }
   void setMiscFlag(enum MiscFlags M) { Misc |= M; }
@@ -269,7 +269,7 @@ protected:
     : NumOccurrences(0), Occurrences(OccurrencesFlag), Value(0),
       HiddenFlag(Hidden), Formatting(NormalFormatting), Misc(0),
       Position(0), AdditionalVals(0), NextRegistered(0),
-      ArgStr(""), HelpStr(""), ValueStr(""), group(GeneralOption::getInstance()) {
+      ArgStr(""), HelpStr(""), ValueStr(""), category(GeneralOption::getInstance()) {
   }
 
   inline void setNumAdditionalVals(unsigned n) { AdditionalVals = n; }
@@ -277,8 +277,6 @@ public:
   // addArgument - Register this argument with the commandline system.
   //
   void addArgument();
-
-
 
   Option *getNextRegisteredOption() const { return NextRegistered; }
 
@@ -349,12 +347,12 @@ initializer<Ty> init(const Ty &Val) {
 // grp - Specific the Option group for the command line argument to
 // belong to
 template<class Ty>
-struct grp {
-  Ty* group;
-  grp() { group=Ty::getInstance();}
+struct cat {
+  Ty* category;
+  cat() { category=Ty::getInstance();}
 
   template<class Opt>
-  void apply(Opt &O) const { O.setOptionGroup(group); }
+  void apply(Opt &O) const { O.setOptionCategory(category); }
 };
 
 
