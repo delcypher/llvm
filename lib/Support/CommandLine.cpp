@@ -1335,9 +1335,14 @@ public:
     for(std::vector<OptGroup*>::const_iterator i = sortedGroups.begin();
          i != sortedGroups.end(); ++i)
     {
-      outs() << "\n\n";
-      outs() <<  (*i)->name()  << "\n";
-      outs() <<  (*i)->description()  << "\n\n";
+      outs() << "\n";
+      outs() <<  (*i)->name()  << ":\n";
+
+      //check if description is blank
+      if((*i)->description()[0])
+        outs() <<  (*i)->description()  << "\n\n";
+      else
+        outs() << "\n";
 
       //Loop over the options in the group
       for(std::vector<Option*>::const_iterator o = groupedOptions[*i].begin(); o != groupedOptions[*i].end(); ++o)
