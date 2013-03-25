@@ -22,6 +22,7 @@
 
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/Twine.h"
+#include "llvm/ADT/StringMap.h"
 #include "llvm/Support/Compiler.h"
 #include "llvm/Support/type_traits.h"
 #include <cassert>
@@ -304,6 +305,18 @@ public:
   inline int getNumOccurrences() const { return NumOccurrences; }
   virtual ~Option() {}
 };
+
+//===----------------------------------------------------------------------===//
+// Public interface for accessing registered options.
+//
+
+///  Use this to get a StringMap to all registered named options (e.g. -help).
+///  \param map Should be an empty StringMap.
+///
+///  The passed in StringMap will be filled with mappings where the
+///  key is the Option ArgStr (e.g. "help") and value is to the corresponding
+///  Option*
+void getRegisteredOptions(StringMap<Option*> & map);
 
 
 //===----------------------------------------------------------------------===//
