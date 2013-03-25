@@ -88,8 +88,7 @@ struct OptGroup
 /// OPT_GRP(TYPE,NAME,DES) - A macro for creating an option group
 ///
 ///
-#define OPT_GRP(TYPE,NAME,DES) class TYPE : public llvm::cl::OptGroup { \
-  public: \
+#define OPT_GRP(TYPE,NAME,DES) struct TYPE : public llvm::cl::OptGroup { \
     virtual const char* description() { return #DES; } \
     virtual const char* name() { return #NAME; } \
     static TYPE* getInstance() \
