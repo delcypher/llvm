@@ -186,6 +186,10 @@ class Option {
     return ValueOptional;
   }
 
+  // addGroup - Register the option group that this option belongs to
+  //
+  void addGroup();
+
   // Out of line virtual function to provide home for the class.
   virtual void anchor();
 
@@ -230,10 +234,6 @@ public:
 
   // hasArgStr - Return true if the argstr != ""
   bool hasArgStr() const { return ArgStr[0] != 0; }
-
-  // addGroup - Register the option group that this option belongs to
-  //
-  void addGroup();
 
   // Check to see if the option is a member of a
   // particular option group
