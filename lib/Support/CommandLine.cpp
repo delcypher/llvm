@@ -1230,11 +1230,11 @@ sortOpts(StringMap<Option*> &OptMap,
 //Provide a public interface for accessing registered options.
 void cl::getRegisteredOptions(StringMap<Option*> & map)
 {
-	    // Get all the options.
-	    SmallVector<Option*, 4> PositionalOpts; //NOT USED
-	    SmallVector<Option*, 4> SinkOpts;  //NOT USED
-	    GetOptionInfo(PositionalOpts, SinkOpts, map);
-	    return;
+	// Get all the options.
+	SmallVector<Option*, 4> PositionalOpts; //NOT USED
+	SmallVector<Option*, 4> SinkOpts;  //NOT USED
+	GetOptionInfo(PositionalOpts, SinkOpts, map);
+  return;
 }
 
 namespace {
@@ -1242,7 +1242,8 @@ namespace {
 class HelpPrinter {
   const bool ShowHidden;
 
-  virtual void printOptions(SmallVector<std::pair<const char *, Option*>, 128>& Opts, size_t MaxArgLen)
+  virtual void printOptions(
+    SmallVector<std::pair<const char *, Option*>, 128>& Opts, size_t MaxArgLen)
   {
     for (size_t i = 0, e = Opts.size(); i != e; ++i)
       Opts[i].second->printOptionInfo(MaxArgLen);
@@ -1315,55 +1316,69 @@ public:
   //Helper function for printOptions()
   //It shall return true if "a" should be ordered before "b", false otherwise
   static bool OptionCategoryCompare(OptionCategory* a,OptionCategory* b) {
-	  return strcmp(a->name(),b->name()) < 0 ;
+	  assert(strcmp(a->name(),b->name()) !=0 && "Duplicate option categories");
+    return strcmp(a->name(),b->name()) < 0 ;
   }
 
   //Make sure we inherit our base class's operator=()
   using HelpPrinter::operator=;
 
-  virtual void printOptions(SmallVector<std::pair<const char *, Option*>, 128>& Opts, size_t MaxArgLen)
+  virtual void printOptions(
+    SmallVector<std::pair<const char *, Option*>, 128>& Opts, size_t MaxArgLen)
   {
     std::vector<OptionCategory*> sortedCategories;
     std::map<OptionCategory*,std::vector<Option*> > categorizedOptions;
 
     //Find the different option groups and sort them alphabetically
-    for(SmallPtrSet<OptionCategory*,16>::const_iterator i= registeredOptionGroups->begin();
-          i!= registeredOptionGroups->end(); ++i)
+    for (SmallPtrSet<OptionCategory*,16>::const_iterator
+         i= registeredOptionGroups->begin(), E= registeredOptionGroups->end();
+         i != E; ++i)
     {
       sortedCategories.push_back(*i);
     }
-    std::sort(sortedCategories.begin(),sortedCategories.end(),OptionCategoryCompare);
+    assert(sortedCategories.size() > 0 && "No option categories registered!");
+    std::sort(sortedCategories.begin(),
+              sortedCategories.end(),
+              OptionCategoryCompare);
 
     //Create map to empty vectors
-    for(std::vector<OptionCategory*>::const_iterator i = sortedCategories.begin();
-          i != sortedCategories.end() ; ++i)
+    for (std::vector<OptionCategory*>::const_iterator
+         i = sortedCategories.begin(), E = sortedCategories.end();
+         i != E ; ++i)
     {
       categorizedOptions[*i] = std::vector<Option*>();
-
     }
 
-    //Walk through pre-sorted options and assign into groups
+    //Walk through pre-sorted options and assign into groups.
+    //Because the options are already alphabetically sorted the
+    //options within groups will also be alphabetically sorted
     for (size_t i = 0, e = Opts.size(); i != e; ++i)
     {
       Option* o = Opts[i].second;
+      assert(categorizedOptions.count(o->category) > 0
+          && "Option has an unregistered category");
       categorizedOptions[o->category].push_back(o);
     }
 
     //Now do printing
-    for(std::vector<OptionCategory*>::const_iterator i = sortedCategories.begin();
-         i != sortedCategories.end(); ++i)
+    for (std::vector<OptionCategory*>::const_iterator
+         category = sortedCategories.begin(), E = sortedCategories.end();
+         category != E; ++category)
     {
       outs() << "\n";
-      outs() <<  (*i)->name()  << ":\n";
+      outs() <<  (*category)->name()  << ":\n";
 
       //check if description is blank
-      if((*i)->description()[0])
-        outs() <<  (*i)->description()  << "\n\n";
+      if ((*category)->description()[0])
+        outs() <<  (*category)->description()  << "\n\n";
       else
         outs() << "\n";
 
       //Loop over the options in the group
-      for(std::vector<Option*>::const_iterator o = categorizedOptions[*i].begin(); o != categorizedOptions[*i].end(); ++o)
+      for (std::vector<Option*>::const_iterator
+           o = categorizedOptions[*category].begin(),
+           E = categorizedOptions[*category].end();
+           o != E; ++o)
       {
          (*o)->printOptionInfo(MaxArgLen);
       }
@@ -1395,12 +1410,15 @@ HHOp("help-hidden", cl::desc("Display all available options"),
      cl::location(HiddenPrinter), cl::Hidden, cl::ValueDisallowed);
 
 static cl::opt<HelpPrinter, true, parser<bool> >
-HCOp("help-cat", cl::desc("Display available options in categories (-help-cat-hidden for more)"),
-    cl::location(CategorizedNormalPrinter), cl::ValueDisallowed);
+HCOp("help-cat",
+     cl::desc("Display available options in categories "
+              "(-help-cat-hidden for more)"),
+     cl::location(CategorizedNormalPrinter), cl::ValueDisallowed);
 
 static cl::opt<HelpPrinter, true, parser<bool> >
-HHCOp("help-cat-hidden", cl::desc("Display all available options in categories"),
-    cl::location(CategorizedHiddenPrinter), cl::Hidden, cl::ValueDisallowed);
+HHCOp("help-cat-hidden",
+      cl::desc("Display all available options in categories"),
+      cl::location(CategorizedHiddenPrinter), cl::Hidden, cl::ValueDisallowed);
 
 static cl::opt<bool>
 PrintOptions("print-options",
@@ -1510,11 +1528,11 @@ void cl::PrintHelpMessage(bool hidden, bool categorized) {
   //
   // [1] : -help-hidden, -help-cat, -help-cat-hidden
 
-  if(!hidden && !categorized)
+  if (!hidden && !categorized)
     NormalPrinter = true;
-  else if(!hidden && categorized)
+  else if (!hidden && categorized)
     CategorizedNormalPrinter = true;
-  else if(hidden && !categorized)
+  else if (hidden && !categorized)
 	  HiddenPrinter = true;
   else
 	  CategorizedHiddenPrinter = true;

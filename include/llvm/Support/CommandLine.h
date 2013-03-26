@@ -102,7 +102,7 @@ struct OptionCategory
     static TYPE* getInstance() \
     { \
       static TYPE* instance=0; \
-      if(instance==0) \
+      if (instance==0) \
         instance= new TYPE(); \
       \
       assert(strlen(instance->name()) > 0 && \
@@ -326,8 +326,9 @@ public:
 /// \brief Use this to get a StringMap to all registered named options
 /// (e.g. -help). Note \p map Should be an empty StringMap.
 ///
-/// \param [in,out] map will be filled with mappings where the key is the Option
-/// argument string (e.g. "help") and value is the corresponding Option*.
+/// \param [in,out] map will be filled with mappings where the key is the
+/// Option argument string (e.g. "help") and value is the corresponding
+/// Option*.
 ///
 /// Access to unnamed arguments (i.e. positional) are not provided because
 /// it is expected that the client already have access to these
