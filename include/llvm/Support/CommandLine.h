@@ -97,6 +97,11 @@ struct OptionCategory
 ///  This declares a subclass of llvm::cl::OptionCategory of type \p TYPE .
 ///  The class is declared in the current namespace.
 #define OPT_CAT(TYPE,NAME,DES) struct TYPE : public llvm::cl::OptionCategory {\
+  private: \
+    TYPE() {} \
+    TYPE(const TYPE&) LLVM_DELETED_FUNCTION ; \
+    TYPE& operator=(const TYPE&) LLVM_DELETED_FUNCTION ;\
+  public: \
     virtual const char* description() { return #DES; } \
     virtual const char* name() { return #NAME; } \
     static TYPE* getInstance() \
