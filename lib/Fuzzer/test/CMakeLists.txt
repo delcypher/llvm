@@ -160,7 +160,18 @@ target_include_directories(LLVMFuzzer-Unittest PRIVATE
 ###############################################################################
 
 include_directories(..)
-add_subdirectory(dfsan)
+
+# Test if the compiler supports the dataflow-sanitizer
+# -fsanitize=dataflow
+CHECK_CXX_COMPILER_FLAG("-fsanitize=address" HAS_DFSAN)
+if(HAS_DFSAN)
+  add_subdirectory(dfsan)
+else()
+  message(WARNING "Host compiler does not support the dataflow sanitizer."
+    " Building and running LibFuzzer dataflow sanitizer tests is disabled."
+    )
+endif()
+
 add_subdirectory(uninstrumented)
 add_subdirectory(ubsan)
 add_subdirectory(trace-bb)
