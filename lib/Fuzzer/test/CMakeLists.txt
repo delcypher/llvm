@@ -30,6 +30,7 @@ set(CMAKE_CXX_FLAGS "${LIBFUZZER_FLAGS_BASE} -fsanitize-coverage=edge,indirect-c
 # add_libfuzzer_test(<name>
 #   [NO_MAIN]
 #   SOURCES source0.cpp [source1.cpp ...]
+#   [EXTRA WEAK_SYMBOLS symbol0 [symbol1 ...]]
 #   )
 #
 #   Declares a LibFuzzer test executable with target name LLVMFuzzer-<name>.
@@ -42,7 +43,7 @@ set(CMAKE_CXX_FLAGS "${LIBFUZZER_FLAGS_BASE} -fsanitize-coverage=edge,indirect-c
 #   after the SOURCES keyword.
 function(add_libfuzzer_test name)
   set(options "NO_MAIN")
-  set(multi_arg_options "SOURCES")
+  set(multi_arg_options "SOURCES" "EXTRA_WEAK_SYMBOLS")
   cmake_parse_arguments(
     "add_libfuzzer_test" "${options}" "" "${multi_arg_options}" ${ARGN})
   if ("${add_libfuzzer_test_SOURCES}" STREQUAL "")
@@ -65,6 +66,20 @@ function(add_libfuzzer_test name)
     PROPERTIES RUNTIME_OUTPUT_DIRECTORY
     "${CMAKE_BINARY_DIR}/lib/Fuzzer/test"
     )
+  # Know LibFuzzer weak symbols
+  set(weak_symbols
+    "LLVMFuzzerCustomMutator"
+    "LLVMFuzzerInitialize"
+    ${add_libfuzzer_test_EXTRA_WEAK_SYMBOLS})
+  if (APPLE)
+    # On Apple platforms we need to tell the linker to allow
+    # the weak symbols to be undefined
+    foreach (weak_sym ${weak_symbols})
+      set_property(TARGET LLVMFuzzer-${name}
+        APPEND_STRING PROPERTY
+        LINK_FLAGS " -Wl,-U,_${weak_sym}")
+    endforeach()
+  endif()
   set(TestBinaries ${TestBinaries} LLVMFuzzer-${name} PARENT_SCOPE)
 endfunction()
 

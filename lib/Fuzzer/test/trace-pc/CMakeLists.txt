@@ -9,7 +9,10 @@ set(TracePCTests
   )
 
 foreach(Test ${TracePCTests})
-  add_libfuzzer_test(${Test}-TracePC SOURCES ../${Test}.cpp)
+  add_libfuzzer_test(${Test}-TracePC
+    SOURCES ../${Test}.cpp
+    EXTRA_WEAK_SYMBOLS __sanitizer_cov_trace_pc_indir
+    )
 endforeach()
 
 # Propagate value into parent directory
