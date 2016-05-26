@@ -156,7 +156,17 @@ set_target_properties(LLVMFuzzer-Unittest
 ###############################################################################
 
 include_directories(..)
-add_subdirectory(dfsan)
+
+if(APPLE)
+  message(WARNING "Dataflow sanitizer is not supported on Darwin."
+    "Building and running LibFuzzer dataflow sanitizer tests is disabled."
+    )
+  set(HAS_DFSAN 0)
+else()
+  set(HAS_DFSAN 1)
+  add_subdirectory(dfsan)
+endif()
+
 add_subdirectory(uninstrumented)
 add_subdirectory(ubsan)
 add_subdirectory(trace-bb)
