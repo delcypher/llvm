@@ -27,8 +27,31 @@ endforeach()
 # Enable the coverage instrumentation (it is disabled for the Fuzzer lib).
 set(CMAKE_CXX_FLAGS "${LIBFUZZER_FLAGS_BASE} -fsanitize-coverage=edge,indirect-calls")
 
+# Weak symbols in LibFuzzer
+set(LIBFUZZER_WEAK_SYMBOLS
+  "LLVMFuzzerCustomMutator"
+  "LLVMFuzzerInitialize"
+)
+
+function(target_allow_weak_symbols target)
+  if (NOT TARGET ${target})
+    message(FATAL_ERROR "Target \"${target}\" does not exist")
+  endif()
+  if(APPLE)
+    # On Apple platforms we need to tell the linker to allow the weak symbols
+    # to be undefined.
+    foreach (weak_sym ${ARGN})
+      set_property(TARGET ${target}
+        APPEND_STRING PROPERTY
+        LINK_FLAGS " -Wl,-U,_${weak_sym}"
+        )
+    endforeach()
+  endif()
+endfunction()
+
 # add_libfuzzer_test(<name>
 #   SOURCES source0.cpp [source1.cpp ...]
+#   [EXTRA WEAK_SYMBOLS symbol0 [symbol1 ...]]
 #   )
 #
 #   Declares a LibFuzzer test executable with target name LLVMFuzzer-<name>.
@@ -36,7 +59,7 @@ set(CMAKE_CXX_FLAGS "${LIBFUZZER_FLAGS_BASE} -fsanitize-coverage=edge,indirect-c
 #   One or more source files to be compiled into the binary must be declared
 #   after the SOURCES keyword.
 function(add_libfuzzer_test name)
-  set(multi_arg_options "SOURCES")
+  set(multi_arg_options "SOURCES" "EXTRA_WEAK_SYMBOLS")
   cmake_parse_arguments(
     "add_libfuzzer_test" "" "" "${multi_arg_options}" ${ARGN})
   if ("${add_libfuzzer_test_SOURCES}" STREQUAL "")
@@ -51,8 +74,13 @@ function(add_libfuzzer_test name)
     PROPERTIES RUNTIME_OUTPUT_DIRECTORY
     "${CMAKE_BINARY_DIR}/lib/Fuzzer/test"
     )
+  target_allow_weak_symbols(LLVMFuzzer-${name}
+    ${LIBFUZZER_WEAK_SYMBOLS}
+    ${add_libfuzzer_test_EXTRA_WEAK_SYMBOLS}
+    )
   set(TestBinaries ${TestBinaries} LLVMFuzzer-${name} PARENT_SCOPE)
 endfunction()
+
 
 # Variable to keep track of all test targets
 set(TestBinaries)
@@ -115,12 +143,14 @@ target_link_libraries(LLVMFuzzer-Unittest
 target_include_directories(LLVMFuzzer-Unittest PRIVATE
   "${LLVM_MAIN_SRC_DIR}/utils/unittest/googletest/include"
   )
+target_allow_weak_symbols(LLVMFuzzer-Unittest ${LIBFUZZER_WEAK_SYMBOLS})
 
 set(TestBinaries ${TestBinaries} LLVMFuzzer-Unittest)
 set_target_properties(LLVMFuzzer-Unittest
   PROPERTIES RUNTIME_OUTPUT_DIRECTORY
   "${CMAKE_CURRENT_BINARY_DIR}"
 )
+
 ###############################################################################
 # Additional tests
 ###############################################################################

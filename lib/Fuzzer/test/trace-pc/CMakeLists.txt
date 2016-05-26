@@ -8,8 +8,14 @@ set(TracePCTests
   FullCoverageSetTest
   )
 
+set(WEAK_SYMBOLS
+  __sanitizer_cov_trace_pc_indir
+  )
 foreach(Test ${TracePCTests})
-  add_libfuzzer_test(${Test}-TracePC SOURCES ../${Test}.cpp)
+  add_libfuzzer_test(${Test}-TracePC
+    SOURCES ../${Test}.cpp
+    EXTRA_WEAK_SYMBOLS ${WEAK_SYMBOLS}
+    )
 endforeach()
 
 # Propagate value into parent directory
