@@ -125,6 +125,13 @@ foreach(Test ${Tests})
   add_libfuzzer_test(${Test} SOURCES ${Test}.cpp)
 endforeach()
 
+if (APPLE)
+  # LeakSanitizer is not supported on OSX right now
+  set(HAS_LSAN 0)
+else()
+  set(HAS_LSAN 1)
+endif()
+
 ###############################################################################
 # Basic custom main function tests
 ###############################################################################
