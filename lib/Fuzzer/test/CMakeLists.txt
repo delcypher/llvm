@@ -62,7 +62,6 @@ set(TestBinaries)
 ###############################################################################
 
 set(Tests
-  AccumulateAllocationsTest
   BufferOverflowOnInput
   CallerCalleeTest
   CounterTest
@@ -72,8 +71,6 @@ set(Tests
   FullCoverageSetTest
   InitializeTest
   MemcmpTest
-  LeakTest
-  LeakTimeoutTest
   NullDerefTest
   NullDerefOnEmptyTest
   NthRunCrashTest
@@ -92,6 +89,21 @@ set(Tests
   ThreadedTest
   TimeoutTest
   )
+
+if(APPLE)
+  # LeakSanitizer is not supported on OSX right now
+  set(HAS_LSAN 0)
+  message(WARNING "Leak sanitizer is not supported on Apple platforms."
+    " Building and running LibFuzzer leak sanitizer tests is disabled."
+    )
+else()
+  list(APPEND Tests
+    AccumulateAllocationsTest
+    LeakTest
+    LeakTimeoutTest
+    )
+  set(HAS_LSAN 1)
+endif()
 
 foreach(Test ${Tests})
   add_libfuzzer_test(${Test} SOURCES ${Test}.cpp)
