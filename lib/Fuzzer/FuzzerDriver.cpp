@@ -265,9 +265,13 @@ static bool AllInputsAreFiles() {
   return true;
 }
 
-static int FuzzerDriver(const std::vector<std::string> &Args,
-                        UserCallback Callback) {
+int FuzzerDriver(int *argc, char ***argv, UserCallback Callback) {
   using namespace fuzzer;
+  assert(argc && argv && "Argument pointers cannot be nullptr");
+  fuzzer::ExternalFunctions EF;
+  if (EF.LLVMFuzzerInitialize)
+    EF.LLVMFuzzerInitialize(argc, argv);
+  const std::vector<std::string> Args(*argv, *argv + *argc);
   assert(!Args.empty());
   ProgName = new std::string(Args[0]);
   ParseFlags(Args);
@@ -416,10 +420,4 @@ static int FuzzerDriver(const std::vector<std::string> &Args,
 
   exit(0);  // Don't let F destroy itself.
 }
-
-int FuzzerDriver(int argc, char **argv, UserCallback Callback) {
-  std::vector<std::string> Args(argv, argv + argc);
-  return FuzzerDriver(Args, Callback);
-}
-
 }  // namespace fuzzer
