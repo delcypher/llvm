@@ -37,7 +37,7 @@ static void CheckFnPtr(void *FnPtr, const char *FnName, bool WarnIfMissing) {
 
 namespace fuzzer {
 
-ExternalFunctions::ExternalFunctions() {
+void ExternalFunctions::Init() {
 #define EXT_FUNC(NAME, RETURN_TYPE, FUNC_SIG, WARN)                            \
   this->NAME = ::NAME;                                                         \
   CheckFnPtr((void *)::NAME, #NAME, WARN);
