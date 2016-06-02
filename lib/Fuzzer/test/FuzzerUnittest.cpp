@@ -406,6 +406,7 @@ TEST(FuzzerUtil, Base64) {
 
 TEST(Corpus, Distribution) {
   Random Rand(0);
+  fuzzer::EF.Init();
   MutationDispatcher MD(Rand);
   Fuzzer::FuzzingOptions Options;
   Fuzzer Fuzz(LLVMFuzzerTestOneInput, MD, Options);

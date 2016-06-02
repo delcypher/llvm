@@ -269,7 +269,9 @@ static bool AllInputsAreFiles() {
 int FuzzerDriver(int *argc, char ***argv, UserCallback Callback) {
   using namespace fuzzer;
   assert(argc && argv && "Argument pointers cannot be nullptr");
-  fuzzer::ExternalFunctions EF;
+  // We should have been called from main() so it should be safe
+  // to call Init() now.
+  EF.Init();
   if (EF.LLVMFuzzerInitialize)
     EF.LLVMFuzzerInitialize(argc, argv);
   const std::vector<std::string> Args(*argv, *argv + *argc);
@@ -421,4 +423,8 @@ int FuzzerDriver(int *argc, char ***argv, UserCallback Callback) {
 
   exit(0);  // Don't let F destroy itself.
 }
+
+// Storage for global ExternalFunctions object.
+ExternalFunctions EF;
+
 }  // namespace fuzzer

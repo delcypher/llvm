@@ -19,7 +19,8 @@ namespace fuzzer {
 struct ExternalFunctions {
   // Initialize function pointers. Functions that are not available
   // will be set to nullptr.
-  ExternalFunctions();
+  // Do not call this function before ``main()`` has been entered.
+  void Init();
 
 #define EXT_FUNC(NAME, RETURN_TYPE, FUNC_SIG, WARN)                            \
   RETURN_TYPE(*NAME) FUNC_SIG = nullptr
