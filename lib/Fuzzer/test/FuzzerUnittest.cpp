@@ -3,6 +3,7 @@
 
 #include "FuzzerInternal.h"
 #include "gtest/gtest.h"
+#include <memory>
 #include <set>
 
 using namespace fuzzer;
@@ -422,4 +423,12 @@ TEST(Corpus, Distribution) {
     // A weak sanity check that every unit gets invoked.
     EXPECT_GT(Hist[i], TriesPerUnit / N / 3);
   }
+}
+
+int main(int argc, char **argv) {
+  // Make sure we free to avoid LSan firing.
+  std::unique_ptr<ExternalFunctions> t(new ExternalFunctions());
+  fuzzer::EF = t.get();
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

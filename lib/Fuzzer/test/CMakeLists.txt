@@ -118,7 +118,6 @@ add_executable(LLVMFuzzer-Unittest
 
 target_link_libraries(LLVMFuzzer-Unittest
   gtest
-  gtest_main
   LLVMFuzzerNoMain
   )
 

@@ -37,7 +37,7 @@ MutationDispatcher::MutationDispatcher(Random &Rand) : Rand(Rand) {
            "AddFromPersAutoDict"},
       });
 
-  if (EF.LLVMFuzzerCustomMutator)
+  if (EF->LLVMFuzzerCustomMutator)
     Mutators.push_back({&MutationDispatcher::Mutate_Custom, "Custom"});
   else
     Mutators = DefaultMutators;
@@ -63,7 +63,7 @@ static char RandCh(Random &Rand) {
 
 size_t MutationDispatcher::Mutate_Custom(uint8_t *Data, size_t Size,
                                          size_t MaxSize) {
-  return EF.LLVMFuzzerCustomMutator(Data, Size, MaxSize, Rand.Rand());
+  return EF->LLVMFuzzerCustomMutator(Data, Size, MaxSize, Rand.Rand());
 }
 
 size_t MutationDispatcher::Mutate_ShuffleBytes(uint8_t *Data, size_t Size,
