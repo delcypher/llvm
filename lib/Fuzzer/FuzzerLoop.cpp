@@ -236,6 +236,8 @@ void Fuzzer::RssLimitCallback() {
   Printf("   To change the out-of-memory limit use -rss_limit_mb=<N>\n\n");
   if (EF.__sanitizer_print_memory_profile)
     EF.__sanitizer_print_memory_profile(50);
+  else
+    Printf("Live Heap Allocations: UNAVAILABLE\n");
   DumpCurrentUnit("oom-");
   Printf("SUMMARY: libFuzzer: out-of-memory\n");
   PrintFinalStats();
