@@ -118,6 +118,11 @@ add_executable(LLVMFuzzer-Unittest
   FuzzerFnAdapterUnittest.cpp
   )
 
+if(APPLE)
+  # Avoid horrible issues at the ASan/NonASan boundary.
+  target_compile_definitions(LLVMFuzzer-Unittest PRIVATE _LIBCPP_HAS_NO_ASAN)
+endif()
+
 target_link_libraries(LLVMFuzzer-Unittest
   gtest
   gtest_main
