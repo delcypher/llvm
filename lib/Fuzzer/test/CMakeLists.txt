@@ -116,6 +116,41 @@ add_executable(LLVMFuzzer-Unittest
   FuzzerFnAdapterUnittest.cpp
   )
 
+# Detect if host compiler is using libcxx.
+# FIXME: This probably belongs in LLVM's main configure code
+# so others can use this information.
+set(libcxx_detect_src "
+	#include <iostream>
+  #if defined(_LIBCPP_VERSION)
+  #error CMAKE_HAS_LIBCXX_TRUE
+  #else
+  #error CMAKE_HAS_LIBCXX_FALSE
+  #endif
+  ")
+
+  file(WRITE "${CMAKE_BINARY_DIR}/libcxx_detect.cpp" "${libcxx_detect_src}")
+  try_compile(compile_succeeded
+    "${CMAKE_BINARY_DIR}"
+    "${CMAKE_BINARY_DIR}/libcxx_detect.cpp"
+    OUTPUT_VARIABLE compiler_output
+  )
+if(compile_succeeded)
+	message(FATAL_ERROR "Compilation should fail")
+endif()
+string(REGEX MATCH "CMAKE_HAS_LIBCXX_(TRUE|FALSE)" filtered_ouput "${compiler_output}")
+if ("${filtered_ouput}" MATCHES "CMAKE_HAS_LIBCXX_TRUE")
+	set(HAS_LIBCXX TRUE)
+else()
+	set(HAS_LIBCXX FALSE)
+endif()
+
+if(HAS_LIBCXX)
+	# Avoid mixing different libc++ implementations of standard library
+  # containers caused by mixing ASan-ified (unit test) and non-ASan-ified code
+  # (LibFuzzer).
+  target_compile_definitions(LLVMFuzzer-Unittest PRIVATE _LIBCPP_HAS_NO_ASAN)
+endif()
+
 target_link_libraries(LLVMFuzzer-Unittest
   gtest
   gtest_main
