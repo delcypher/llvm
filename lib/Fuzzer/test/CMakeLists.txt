@@ -127,6 +127,11 @@ target_include_directories(LLVMFuzzer-Unittest PRIVATE
   "${LLVM_MAIN_SRC_DIR}/utils/unittest/googletest/include"
   )
 
+# For libcxx: Avoid ODR violations by using the same implementation of standard
+# library container types in both LibFuzzer (not built with ASan) and the unit
+# test (built with ASan).
+target_compile_definitions(LLVMFuzzer-Unittest PRIVATE _LIBCPP_HAS_NO_ASAN)
+
 set(TestBinaries ${TestBinaries} LLVMFuzzer-Unittest)
 set_target_properties(LLVMFuzzer-Unittest
   PROPERTIES RUNTIME_OUTPUT_DIRECTORY
