@@ -19,6 +19,7 @@
 #include <climits>
 #include <cstddef>
 #include <cstdlib>
+#include <fstream>
 #include <random>
 #include <string.h>
 #include <string>
@@ -132,12 +133,23 @@ void SleepSeconds(int Seconds);
 
 class Random {
  public:
-  Random(unsigned int seed) : R(seed) {}
-  size_t Rand() { return R(); }
+  Random(unsigned int seed) : R(seed) {
+    assert(counter == 0);
+    log.open("xxx.log");
+    ++counter;
+  }
+  size_t Rand() {
+    size_t result = R();
+    log << result << "\n";
+    log.flush();
+    return result;
+  }
   size_t RandBool() { return Rand() % 2; }
   size_t operator()(size_t n) { return n ? Rand() % n : 0; }
   std::mt19937 &Get_mt19937() { return R; }
  private:
+  static unsigned counter;
+  std::ofstream log;
   std::mt19937 R;
 };
 

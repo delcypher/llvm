@@ -21,6 +21,8 @@
 
 namespace fuzzer {
 
+unsigned Random::counter = 0;
+
 static FILE *OutputFile = stderr;
 
 bool IsFile(const std::string &Path) {
