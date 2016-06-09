@@ -139,10 +139,22 @@ class Random {
     ++counter;
   }
   size_t Rand() {
-    size_t result = R();
+    size_t result = 0;
+    if (peek.size() > 0) {
+      result = peek.back();
+      peek.pop_back();
+    } else {
+      result = R();
+    }
     log << result << "\n";
     log.flush();
     return result;
+  }
+
+  size_t Peek() {
+    size_t peekValue = R();
+    peek.push_back(peekValue);
+    return peekValue;
   }
   size_t RandBool() { return Rand() % 2; }
   size_t operator()(size_t n) { return n ? Rand() % n : 0; }
@@ -151,6 +163,7 @@ class Random {
   static unsigned counter;
   std::ofstream log;
   std::mt19937 R;
+  std::vector<size_t> peek;
 };
 
 // Dictionary.

@@ -300,7 +300,9 @@ size_t MutationDispatcher::MutateImpl(uint8_t *Data, size_t Size,
   // Try several times before returning un-mutated data.
   for (int Iter = 0; Iter < 10; Iter++) {
     auto M = Mutators[Rand(Mutators.size())];
+    LogFile << "cc" << callCount << "BC,nrn:" << Rand.Peek() << std::endl;
     size_t NewSize = (this->*(M.Fn))(Data, Size, MaxSize);
+    LogFile << "cc" << callCount << "AC,nrn:" << Rand.Peek() << std::endl;
     LogFile << "cc" << callCount
             << ",i:" << Iter << ","
             << M.Name <<
