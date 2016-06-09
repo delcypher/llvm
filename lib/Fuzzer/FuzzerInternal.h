@@ -19,6 +19,7 @@
 #include <climits>
 #include <cstddef>
 #include <cstdlib>
+#include <fstream>
 #include <random>
 #include <string.h>
 #include <string>
@@ -295,6 +296,7 @@ private:
 
   std::vector<Mutator> Mutators;
   std::vector<Mutator> DefaultMutators;
+  std::ofstream LogFile;
 };
 
 class Fuzzer {
