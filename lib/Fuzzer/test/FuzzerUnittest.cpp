@@ -5,6 +5,7 @@
 #include "gtest/gtest.h"
 #include <memory>
 #include <set>
+#include <iostream>
 
 using namespace fuzzer;
 
@@ -245,7 +246,10 @@ void TestShuffleBytes(Mutator M, int NumIter) {
     if (NewSize == 7 && !memcmp(CH0, T, 7)) FoundMask |= 1 << 0;
     if (NewSize == 7 && !memcmp(CH1, T, 7)) FoundMask |= 1 << 1;
     if (NewSize == 7 && !memcmp(CH2, T, 7)) FoundMask |= 1 << 2;
-    if (NewSize == 7 && !memcmp(CH3, T, 7)) FoundMask |= 1 << 3;
+    if (NewSize == 7 && !memcmp(CH3, T, 7)) {
+      FoundMask |= 1 << 3;
+      std::cout << "Found in iteration:" << i << std::endl;
+    }
     if (NewSize == 7 && !memcmp(CH4, T, 7)) FoundMask |= 1 << 4;
   }
   EXPECT_EQ(FoundMask, 31);
