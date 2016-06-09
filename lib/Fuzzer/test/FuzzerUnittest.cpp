@@ -261,6 +261,7 @@ void TestShuffleBytes(Mutator M, int NumIter) {
     if (NewSize == 7 && !memcmp(CH2, T, 7)) FoundMask |= 1 << 2;
     if (NewSize == 7 && !memcmp(CH3, T, 7)) {
       FoundMask |= 1 << 3;
+      LogFile << "^^hit\n"; LogFile.flush();
       std::cout << "Found in iteration:" << i << std::endl;
     }
     if (NewSize == 7 && !memcmp(CH4, T, 7)) FoundMask |= 1 << 4;
