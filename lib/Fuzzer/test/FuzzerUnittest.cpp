@@ -6,6 +6,7 @@
 #include <memory>
 #include <set>
 #include <iostream>
+#include <fstream>
 
 using namespace fuzzer;
 
@@ -229,7 +230,18 @@ TEST(FuzzerMutate, ChangeBit2) {
   TestChangeBit(&MutationDispatcher::Mutate, 1 << 18);
 }
 
+void XDump(uint8_t* data, size_t size, std::ofstream& LogFile) {
+  assert(size <= 7);
+  for (size_t index = 0; index < size; ++index) {
+    LogFile << "0x" << std::hex << ((unsigned)data[index]) << ",";
+  }
+  LogFile << "\n";
+  LogFile.flush();
+}
+
 void TestShuffleBytes(Mutator M, int NumIter) {
+  std::ofstream LogFile;
+  LogFile.open("mutants.yyy.log");
   std::unique_ptr<ExternalFunctions> t(new ExternalFunctions());
   fuzzer::EF = t.get();
   Random Rand(0);
@@ -243,6 +255,7 @@ void TestShuffleBytes(Mutator M, int NumIter) {
   for (int i = 0; i < NumIter; i++) {
     uint8_t T[7] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66};
     size_t NewSize = (MD.*M)(T, 7, 7);
+    XDump(T, NewSize, LogFile);
     if (NewSize == 7 && !memcmp(CH0, T, 7)) FoundMask |= 1 << 0;
     if (NewSize == 7 && !memcmp(CH1, T, 7)) FoundMask |= 1 << 1;
     if (NewSize == 7 && !memcmp(CH2, T, 7)) FoundMask |= 1 << 2;
@@ -252,6 +265,7 @@ void TestShuffleBytes(Mutator M, int NumIter) {
     }
     if (NewSize == 7 && !memcmp(CH4, T, 7)) FoundMask |= 1 << 4;
   }
+  LogFile.close();
   EXPECT_EQ(FoundMask, 31);
 }
 
