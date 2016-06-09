@@ -152,8 +152,15 @@ class Random {
   }
 
   size_t Peek() {
-    size_t peekValue = R();
-    peek.push_back(peekValue);
+    assert(peek.size() <= 1);
+    size_t peekValue = 0;
+    if (peek.size() > 0) {
+      peekValue = peek.back();
+      peek.pop_back();
+    } else {
+      peekValue = R();
+      peek.push_back(peekValue);
+    }
     return peekValue;
   }
   size_t RandBool() { return Rand() % 2; }

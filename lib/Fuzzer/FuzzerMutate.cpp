@@ -302,7 +302,6 @@ size_t MutationDispatcher::MutateImpl(uint8_t *Data, size_t Size,
     auto M = Mutators[Rand(Mutators.size())];
     LogFile << "cc" << callCount << "BC,nrn:" << Rand.Peek() << std::endl;
     size_t NewSize = (this->*(M.Fn))(Data, Size, MaxSize);
-    LogFile << "cc" << callCount << "AC,nrn:" << Rand.Peek() << std::endl;
     LogFile << "cc" << callCount
             << ",i:" << Iter << ","
             << M.Name <<
@@ -310,6 +309,7 @@ size_t MutationDispatcher::MutateImpl(uint8_t *Data, size_t Size,
             << ",ms" << MaxSize
             << ",ns:" << NewSize
             << std::endl;
+    LogFile << "cc" << callCount << "AC,nrn:" << Rand.Peek() << std::endl;
     LogFile.flush();
     if (NewSize) {
       CurrentMutatorSequence.push_back(M);
