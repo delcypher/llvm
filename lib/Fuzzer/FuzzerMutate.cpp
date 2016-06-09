@@ -45,6 +45,8 @@ MutationDispatcher::MutationDispatcher(Random &Rand) : Rand(Rand) {
   if (EF->LLVMFuzzerCustomCrossOver)
     Mutators.push_back(
         {&MutationDispatcher::Mutate_CustomCrossOver, "CustomCrossOver"});
+
+  LogFile.open("mutate.xxx.log");
 }
 
 static char FlipRandomBit(char X, Random &Rand) {
@@ -280,11 +282,16 @@ size_t MutationDispatcher::DefaultMutate(uint8_t *Data, size_t Size,
 size_t MutationDispatcher::MutateImpl(uint8_t *Data, size_t Size,
                                       size_t MaxSize,
                                       const std::vector<Mutator> &Mutators) {
+  static unsigned callCount = 0;
+  callCount++;
   assert(MaxSize > 0);
   assert(Size <= MaxSize);
   if (Size == 0) {
-    for (size_t i = 0; i < MaxSize; i++)
+    for (size_t i = 0; i < MaxSize; i++) {
       Data[i] = RandCh(Rand);
+      LogFile << "Insert random data:" << Data[i] << std::endl;
+      LogFile.flush();
+    }
     return MaxSize;
   }
   assert(Size > 0);
@@ -294,6 +301,14 @@ size_t MutationDispatcher::MutateImpl(uint8_t *Data, size_t Size,
   for (int Iter = 0; Iter < 10; Iter++) {
     auto M = Mutators[Rand(Mutators.size())];
     size_t NewSize = (this->*(M.Fn))(Data, Size, MaxSize);
+    LogFile << "cc" << callCount
+            << ",i:" << Iter << ","
+            << M.Name <<
+            ",s" << Size
+            << ",ms" << MaxSize
+            << ",ns:" << NewSize
+            << std::endl;
+    LogFile.flush();
     if (NewSize) {
       CurrentMutatorSequence.push_back(M);
       return NewSize;

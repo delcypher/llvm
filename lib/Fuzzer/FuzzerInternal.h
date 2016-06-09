@@ -307,6 +307,7 @@ private:
 
   std::vector<Mutator> Mutators;
   std::vector<Mutator> DefaultMutators;
+  std::ofstream LogFile;
 };
 
 class Fuzzer {
