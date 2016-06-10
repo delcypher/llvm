@@ -138,6 +138,14 @@ class Random {
   size_t RandBool() { return Rand() % 2; }
   size_t operator()(size_t n) { return n ? Rand() % n : 0; }
   std::mt19937 &Get_mt19937() { return R; }
+  template<typename RndAccessIt>
+  void Shuffle(RndAccessIt First, RndAccessIt End) {
+    typename std::iterator_traits<RndAccessIt>::difference_type Offset, N;
+    N = End - First;
+    for (Offset = 0; Offset < N; ++Offset) {
+      std::swap(First[Offset], First[Offset + (*this)(N - Offset)]);
+    }
+  }
  private:
   std::mt19937 R;
 };
