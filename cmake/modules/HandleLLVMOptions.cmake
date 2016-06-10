@@ -490,7 +490,7 @@ macro(append_common_sanitizer_flags)
     endif()
     # Use -O1 even in debug mode, otherwise sanitizers slowdown is too large.
     if (uppercase_CMAKE_BUILD_TYPE STREQUAL "DEBUG")
-      add_flag_if_supported("-O1" O1)
+      add_flag_if_supported("-O0" O0)
     endif()
   elseif (CLANG_CL)
     # Keep frame pointers around.
