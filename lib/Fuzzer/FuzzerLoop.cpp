@@ -321,7 +321,7 @@ void Fuzzer::RereadOutputCorpus(size_t MaxSize) {
 }
 
 void Fuzzer::ShuffleCorpus(UnitVector *V) {
-  std::random_shuffle(V->begin(), V->end(), MD.GetRand());
+  MD.GetRand().Shuffle(V->begin(), V->end());
   if (Options.PreferSmall)
     std::stable_sort(V->begin(), V->end(), [](const Unit &A, const Unit &B) {
       return A.size() < B.size();

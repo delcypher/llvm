@@ -137,6 +137,22 @@ class Random {
   size_t RandBool() { return Rand() % 2; }
   size_t operator()(size_t n) { return n ? Rand() % n : 0; }
   std::mt19937 &Get_mt19937() { return R; }
+  // Shuffle data in the range [First, End)
+  //
+  // We do not use std::random_shuffle() here because its
+  // behavior is not consistent across different platforms.
+  //
+  // The algorithm used here will pick a permutation at
+  // random where every permutation has equal probability
+  // (provided the random source is uniformly distributed).
+  template<typename RndAccessIt>
+  void Shuffle(RndAccessIt First, RndAccessIt End) {
+    typename std::iterator_traits<RndAccessIt>::difference_type Offset, N;
+    N = End - First;
+    for (Offset = 0; Offset < N; ++Offset) {
+      std::swap(First[Offset], First[Offset + (*this)(N - Offset)]);
+    }
+  }
  private:
   std::mt19937 R;
 };
