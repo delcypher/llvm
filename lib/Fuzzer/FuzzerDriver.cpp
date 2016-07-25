@@ -17,6 +17,7 @@
 #include <chrono>
 #include <cstring>
 #include <mutex>
+#include <signal.h> // FIXME: This shouldn't be here!
 #include <string>
 #include <thread>
 #include <unistd.h>
@@ -228,10 +229,30 @@ static int RunInMultipleProcesses(const std::vector<std::string> &Args,
   std::vector<std::thread> V;
   std::thread Pulse(PulseThread);
   Pulse.detach();
+
+  // FIXME: This is a gross layering violation but we have to do this here
+  // because we can't do this the threads because that would be racey.
+  // The threads use ExecuteCommand() which executes waitpid() (or some variant
+  // of it) so we should block SIGINT so that pressing CTRL+C in a terminal
+  // doesn't kill us which would leave behind zombie processes.
+  struct sigaction IgnoreSigIntAction;
+  struct sigaction OldSigIntAction;;
+  memset(&IgnoreSigIntAction, 0, sizeof(IgnoreSigIntAction));
+  IgnoreSigIntAction.sa_handler = SIG_IGN;
+  if (sigaction(SIGINT, &IgnoreSigIntAction, &OldSigIntAction) == -1) {
+    Printf("Failed to block SIGINT\n");
+    exit(1);
+  }
+
   for (int i = 0; i < NumWorkers; i++)
     V.push_back(std::thread(WorkerThread, Cmd, &Counter, NumJobs, &HasErrors));
   for (auto &T : V)
     T.join();
+
+  // Restore normal handling of SIGINT
+  if (sigaction(SIGINT, &OldSigIntAction, 0) == -1) {
+    Printf("Failed to restore handling of SIGINT\n");
+  }
   return HasErrors ? 1 : 0;
 }
 
