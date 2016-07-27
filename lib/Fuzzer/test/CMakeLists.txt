@@ -75,6 +75,7 @@ set(Tests
   MemcmpTest
   LeakTest
   LeakTimeoutTest
+  NoAbort
   NullDerefTest
   NullDerefOnEmptyTest
   NthRunCrashTest
