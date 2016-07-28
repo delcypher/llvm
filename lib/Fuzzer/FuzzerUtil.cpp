@@ -12,12 +12,10 @@
 #include "FuzzerInternal.h"
 #include <sstream>
 #include <iomanip>
-#include <spawn.h>
 #include <sys/resource.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/syscall.h>
-#include <sys/wait.h>
 #include <cassert>
 #include <chrono>
 #include <cstring>
@@ -27,10 +25,6 @@
 #include <errno.h>
 #include <thread>
 
-// There is no header for this on macOS so declare here
-#if LIBFUZZER_APPLE
-extern char** environ;
-#endif
 
 namespace fuzzer {
 
@@ -151,64 +145,6 @@ int NumberOfCpuCores() {
     N = 1;
   }
   return N;
-}
-
-/* This is a reimplementation of Libc's `system()`.
- * On Darwin the Libc implementation contains a mutex
- * which prevents it from being used in parallel. This implementation
- * does not lock and so can be used in parallel. However unlike
- * `system()` this method does not try to modify signal handlers
- * of the current process to avoid being racey.
- */
-int NonLockingSystem(const char* Command) {
-  pid_t Pid;
-  int ErrorCode = 0, ProcessStatus = 0;
-  char** Environ = environ; // Read from global
-  const char* Argv[] = { "sh", "-c", Command, NULL};
-  sigset_t DefaultSigSet;
-  posix_spawnattr_t SpawnAttributes;
-  short SpawnFlags = POSIX_SPAWN_SETSIGDEF;
-  sigemptyset(&DefaultSigSet);
-  if (posix_spawnattr_init(&SpawnAttributes)) return -1;
-
-  // Make sure the child process uses the default handlers for the
-  // following signals rather than inheriting what the parent has.
-  sigaddset(&DefaultSigSet, SIGQUIT);
-  sigaddset(&DefaultSigSet, SIGINT);
-  posix_spawnattr_setsigdefault(&SpawnAttributes, &DefaultSigSet);
-  posix_spawnattr_setflags(&SpawnAttributes, SpawnFlags);
-
-  // FIXME: We probably shouldn't hardcode the shell path.
-  ErrorCode = posix_spawn(&Pid, "/bin/sh", NULL, &SpawnAttributes, (char *const *)Argv, Environ);
-  posix_spawnattr_destroy(&SpawnAttributes);
-  if (!ErrorCode) {
-    pid_t SavedPid = Pid;
-    do {
-      // Repeat until call completes uninterrupted.
-      Pid = waitpid(SavedPid, &ProcessStatus, /*options=*/0);
-    } while (Pid == -1 && errno == EINTR);
-    if (Pid == -1) {
-      // Fail for some other reason.
-      ProcessStatus = -1;
-    }
-  }
-  else if (ErrorCode == ENOMEM || ErrorCode == EAGAIN) {
-    // Fork failure.
-    ProcessStatus = -1;
-  } else {
-    // Shell execution failure.
-    ProcessStatus = W_EXITCODE(127, 0);
-  }
-  return ProcessStatus;
-}
-
-int ExecuteCommand(const std::string &Command) {
-  if (LIBFUZZER_LINUX)
-    return system(Command.c_str());
-  else if (LIBFUZZER_APPLE)
-    return NonLockingSystem(Command.c_str());
-  assert(0 && "ExecuteCommand() is not implemented for your platform");
-  return -1;
 }
 
 bool ToASCII(uint8_t *Data, size_t Size) {
