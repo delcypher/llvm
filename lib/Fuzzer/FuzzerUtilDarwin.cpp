@@ -17,6 +17,11 @@
 // There is no header for this on macOS so declare here
 extern char **environ;
 namespace fuzzer {
+
+static struct sigaction OldSigIntAction;
+static struct sigaction OldSigQuitAction;
+static sigset_t OldBlockedSignalsSet;
+
 /* This is a reimplementation of Libc's `system()`.
  * On Darwin the Libc implementation contains a mutex
  * which prevents it from being used in parallel. This implementation
@@ -30,18 +35,42 @@ int ExecuteCommand(const std::string &Command) {
   int ErrorCode = 0, ProcessStatus = 0;
   char **Environ = environ; // Read from global
   const char *Argv[] = {"sh", "-c", CommandCStr, NULL};
-  sigset_t DefaultSigSet;
+  sigset_t DefaultSigSet, BlockedSignalsSet;
   posix_spawnattr_t SpawnAttributes;
-  short SpawnFlags = POSIX_SPAWN_SETSIGDEF;
+  short SpawnFlags = POSIX_SPAWN_SETSIGDEF | POSIX_SPAWN_SETSIGMASK;
   sigemptyset(&DefaultSigSet);
+  sigemptyset(&BlockedSignalsSet);
   if (posix_spawnattr_init(&SpawnAttributes))
     return -1;
 
+  // FIXME: lock this
+  //
+	static struct sigaction IgnoreSignalAction;
+  memset(&IgnoreSignalAction, 0, sizeof(IgnoreSignalAction));
+  IgnoreSignalAction.sa_handler = SIG_IGN;
+
+  if (sigaction(SIGINT, &IgnoreSignalAction, &OldSigIntAction) == -1) {
+    Printf("Failed to ignore SIGINT\n");
+    exit(1);
+  }
+  if (sigaction(SIGQUIT, &IgnoreSignalAction, &OldSigQuitAction) == -1) {
+    Printf("Failed to ignore SIGQUIT\n");
+    exit(1);
+  }
+
+  sigaddset(&BlockedSignalsSet, SIGCHLD);
+  if (sigprocmask(SIG_BLOCK, &BlockedSignalsSet, &OldBlockedSignalsSet) == -1) {
+		Printf("Failed to block SIGCHLD\n");
+    exit(1);
+	}
+  
   // Make sure the child process uses the default handlers for the
   // following signals rather than inheriting what the parent has.
   sigaddset(&DefaultSigSet, SIGQUIT);
   sigaddset(&DefaultSigSet, SIGINT);
   posix_spawnattr_setsigdefault(&SpawnAttributes, &DefaultSigSet);
+	// Make sure the child process doesn't block SIGCHLD
+  posix_spawnattr_setsigmask(&SpawnAttributes, &OldBlockedSignalsSet);
   posix_spawnattr_setflags(&SpawnAttributes, SpawnFlags);
 
   // FIXME: We probably shouldn't hardcode the shell path.
@@ -65,6 +94,23 @@ int ExecuteCommand(const std::string &Command) {
     // Shell execution failure.
     ProcessStatus = W_EXITCODE(127, 0);
   }
+
+  // Restore the signal handlers
+	// FIXME: lock this
+  if (sigaction(SIGINT, &OldSigIntAction, NULL) == -1) {
+    Printf("Failed to restore SIGINT handling\n");
+    exit(1);
+  }
+  if (sigaction(SIGQUIT, &OldSigQuitAction, NULL) == -1) {
+    Printf("Failed to restore SIGQUIT handling\n");
+    exit(1);
+  }
+
+  if (sigprocmask(SIG_BLOCK, &OldBlockedSignalsSet, NULL) == -1) {
+		Printf("Failed to unblock SIGCHLD\n");
+    exit(1);
+	}
+  
   return ProcessStatus;
 }
 }
